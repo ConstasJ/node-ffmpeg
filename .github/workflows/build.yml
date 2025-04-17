@@ -79,7 +79,7 @@ jobs:
               if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED == 'true' || steps.check_updates.outputs.REBUILD == 'true'
               uses: docker/build-push-action@v4
               with:
-                  context: .
+                  context: ./images/ffmpeg-7.1-ubuntu2204/node22
                   push: true
                   tags: |
                       ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:latest  
