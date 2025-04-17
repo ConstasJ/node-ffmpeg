@@ -1,5 +1,5 @@
 # 基于jrottenberg/ffmpeg镜像  
-FROM jrottenberg/ffmpeg:7.1-ubuntu2204  
+FROM jrottenberg/ffmpeg:7.1-ubuntu2404  
 
 # 安装Node.js  
 RUN apt-get update && apt-get install -y curl && \

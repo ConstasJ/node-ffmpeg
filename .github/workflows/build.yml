@@ -45,7 +45,7 @@ jobs:
               if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED != 'true'
               run: |
                   # 获取当前的镜像摘要  
-                  CURRENT_DIGEST=$(docker manifest inspect jrottenberg/ffmpeg:7.1-ubuntu2204 | jq -r '.digest')  
+                  CURRENT_DIGEST=$(docker manifest inspect jrottenberg/ffmpeg:7.1-ubuntu2404 | jq -r '.digest')  
                   echo "Current digest: $CURRENT_DIGEST"  
 
                   # 获取上次构建的摘要（如果存在）  
@@ -71,7 +71,7 @@ jobs:
               if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED == 'true'
               run: |
                   # 当Dockerfile变更时，获取最新摘要并更新文件，确保下次检查不会重复构建  
-                  CURRENT_DIGEST=$(docker manifest inspect jrottenberg/ffmpeg:7.1-ubuntu2204 | jq -r '.digest')  
+                  CURRENT_DIGEST=$(docker manifest inspect jrottenberg/ffmpeg:7.1-ubuntu2404 | jq -r '.digest')  
                   echo "$CURRENT_DIGEST" > last_digest.txt  
                   echo "Updated digest file due to Dockerfile changes"
 
@@ -79,7 +79,7 @@ jobs:
               if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED == 'true' || steps.check_updates.outputs.REBUILD == 'true'
               uses: docker/build-push-action@v4
               with:
-                  context: ./images/ffmpeg-7.1-ubuntu2204/node22
+                  context: ./images/ffmpeg-7.1-ubuntu2404/node22
                   push: true
                   tags: |
                       ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:latest  
