@@ -84,8 +84,8 @@ jobs:
                   tags: |
                       ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:latest  
                       ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:7.1-node18
-                  cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:latest
-                  cache-to: type=inline
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
 
             - name: Commit and push last digest
               if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED == 'true' || steps.check_updates.outputs.REBUILD == 'true'
