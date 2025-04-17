@@ -83,7 +83,7 @@ jobs:
                   push: true
                   tags: |
                       ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:latest  
-                      ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:7.1-node18
+                      ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:ffmpeg-7.1-ubuntu2404-node22
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
 
