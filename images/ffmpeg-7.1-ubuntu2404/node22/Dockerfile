@@ -15,4 +15,5 @@ RUN node --version && npm --version && ffmpeg -version
 WORKDIR /app  
 
 # 默认命令  
-CMD ["node"]  
+ENTRYPOINT []
+CMD [ "node" ]

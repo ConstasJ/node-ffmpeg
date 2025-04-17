@@ -8,7 +8,7 @@ on:
     push:
         branches: [main] # 当推送到main分支时也运行
         paths:
-            - "Dockerfile" # 当Dockerfile变更时运行
+            - "images/**/Dockerfile" # 当Dockerfile变更时运行
 
 jobs:
     check-and-build:
