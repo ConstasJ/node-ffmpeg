@@ -4,7 +4,7 @@ FROM jrottenberg/ffmpeg:7.1-ubuntu2404
 # 安装Node.js  
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y nodejs gosu && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*  
 
