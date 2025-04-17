@@ -5,6 +5,10 @@ on:
         # 每天凌晨3点运行
         - cron: "0 3 * * *"
     workflow_dispatch: # 允许手动触发
+    push:
+        branches: [main] # 当推送到main分支时也运行
+        paths:
+            - "Dockerfile" # 当Dockerfile变更时运行
 
 jobs:
     check-and-build:
@@ -12,6 +16,20 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0 # 获取完整历史以便检查文件变化
+
+            - name: Check for Dockerfile changes
+              id: dockerfile_changes
+              run: |
+                  # 检查最近的提交是否修改了Dockerfile  
+                  if git diff --name-only HEAD^ HEAD | grep -q "Dockerfile"; then  
+                    echo "Dockerfile changed in the latest commit"  
+                    echo "DOCKERFILE_CHANGED=true" >> $GITHUB_OUTPUT  
+                  else  
+                    echo "Dockerfile not changed in the latest commit"  
+                    echo "DOCKERFILE_CHANGED=false" >> $GITHUB_OUTPUT  
+                  fi
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v2
@@ -24,6 +42,7 @@ jobs:
 
             - name: Check for FFmpeg image updates
               id: check_updates
+              if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED != 'true'
               run: |
                   # 获取当前的镜像摘要  
                   CURRENT_DIGEST=$(docker manifest inspect jrottenberg/ffmpeg:7.1-ubuntu2204 | jq -r '.digest')  
@@ -35,12 +54,12 @@ jobs:
                     echo "Last digest: $LAST_DIGEST"  
                   else  
                     LAST_DIGEST=""  
-                    echo "No previous digest found"  
+                    echo "No previous digest found, will perform initial build"  
                   fi  
 
-                  # 比较摘要  
-                  if [ "$CURRENT_DIGEST" != "$LAST_DIGEST" ]; then  
-                    echo "Image updated, need to rebuild"  
+                  # 比较摘要或检查是否为初次运行  
+                  if [ "$CURRENT_DIGEST" != "$LAST_DIGEST" ] || [ -z "$LAST_DIGEST" ]; then  
+                    echo "Image updated or first run, need to build"  
                     echo "REBUILD=true" >> $GITHUB_OUTPUT  
                     echo "$CURRENT_DIGEST" > last_digest.txt  
                   else  
@@ -48,20 +67,28 @@ jobs:
                     echo "REBUILD=false" >> $GITHUB_OUTPUT  
                   fi
 
-            - name: Build ffmpeg-7.1-ubuntu2404-node22 image
-              if: steps.check_updates.outputs.REBUILD == 'true'
+            - name: Update digest file for Dockerfile changes
+              if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED == 'true'
+              run: |
+                  # 当Dockerfile变更时，获取最新摘要并更新文件，确保下次检查不会重复构建  
+                  CURRENT_DIGEST=$(docker manifest inspect jrottenberg/ffmpeg:7.1-ubuntu2204 | jq -r '.digest')  
+                  echo "$CURRENT_DIGEST" > last_digest.txt  
+                  echo "Updated digest file due to Dockerfile changes"
+
+            - name: Build and push Node-FFmpeg image
+              if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED == 'true' || steps.check_updates.outputs.REBUILD == 'true'
               uses: docker/build-push-action@v4
               with:
-                  context: ./images/ffmpeg-7.1-ubuntu2404/node22
+                  context: .
                   push: true
                   tags: |
                       ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:latest  
-                      ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:7.1-ubuntu2404-node22
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
+                      ${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:7.1-node18
+                  cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/node-ffmpeg:latest
+                  cache-to: type=inline
 
             - name: Commit and push last digest
-              if: steps.check_updates.outputs.REBUILD == 'true'
+              if: steps.dockerfile_changes.outputs.DOCKERFILE_CHANGED == 'true' || steps.check_updates.outputs.REBUILD == 'true'
               run: |
                   git config --global user.name 'GitHub Actions'  
                   git config --global user.email 'actions@github.com'  
